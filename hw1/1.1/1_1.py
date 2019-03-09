@@ -15,14 +15,17 @@ def main():
 
     from deep import Deep 
     from shallow import Shallow
-
+    from two_layers import two_layers
     # model = Deep()
-    model = Shallow()
+    # model = Shallow()
+    model = two_layers()
     model.compile(loss='mse', optimizer='adam', metrics=['mse'])
+
     history = model.fit(train_x, train_y, batch_size=64, epochs=2000)
 
     import pickle
-    with open('shallow_history.pickle', 'wb') as f:
+    with open('two_layers_history.pickle', 'wb') as f:
+    # with open('shallow_history.pickle', 'wb') as f:
     # with open('deep_history.pickle', 'wb') as f:
         pickle.dump(history.history, f, protocol=pickle.HIGHEST_PROTOCOL)
 
