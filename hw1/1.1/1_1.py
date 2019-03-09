@@ -19,7 +19,7 @@ def main():
     # model = Deep()
     model = Shallow()
     model.compile(loss='mse', optimizer='adam', metrics=['mse'])
-    history = model.fit(train_x, train_y, batch_size=64, epochs=20000)
+    history = model.fit(train_x, train_y, batch_size=64, epochs=2000)
 
     import pickle
     with open('shallow_history.pickle', 'wb') as f:
