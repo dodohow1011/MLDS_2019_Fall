@@ -14,11 +14,17 @@ def main():
     train_y[0] = 1
 
     from deep import Deep 
+    from shallow import Shallow
 
-    model = Deep()
+    # model = Deep()
+    model = Shallow()
     model.compile(loss='mse', optimizer='adam', metrics=['mse'])
-    history = model.fit(train_x, train_y, batch_size=32, epochs=200)
-    print(history)
+    history = model.fit(train_x, train_y, batch_size=64, epochs=20000)
+
+    import pickle
+    with open('shallow_history.pickle', 'wb') as f:
+    # with open('deep_history.pickle', 'wb') as f:
+        pickle.dump(history.history, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
     main()
