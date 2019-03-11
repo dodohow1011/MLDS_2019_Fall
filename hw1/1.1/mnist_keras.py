@@ -6,6 +6,8 @@ from keras.optimizers import Adam
 from keras.utils import np_utils
 from keras.datasets import mnist
 import tensorflow as tf
+import sys
+
 def read():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
 	
@@ -25,16 +27,39 @@ def read():
 
 
 def main():
+
+    if len(sys.argv) != 2:
+        print ('usage: python3 mnist_keras.py <option>')
+        print ('options: deep2, deep4, deep6')
+
     x_train, y_train, x_test, y_test = read()
 
-    from deep_mnist import Deep
-    # from shallow_mnist import Shallow
-    # from two_layers_mnist import two_layers
-    model = Deep()
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['mse','accuracy'])
-    with tf.device('/gpu:0'):
-        history = model.fit(x_train,y_train,batch_size=100,epochs=20)
-    
+    if sys.argv[1] == 'deep6':
+        from six_layer import Six_layers
+        model = Six_layers()
+        history_filename = 'deep6_history.pickle'
+        model_filename   = 'deep6_model.h5'
+    elif sys.argv[1] == 'shallow' or sys.argv[1] == 'deep2':
+        from shallow_mnist import Shallow
+        model = Shallow()
+        history_filename = 'deep2_history.pickle'
+        model_filename   = 'deep2_model.h5'
+    elif sys.argv == 'deep4':
+        from four_layers import Four_layers
+        model = Four_layers()
+        history_filename = 'deep4_history.pickle'
+        model_filename   = 'deep4_model.h5'
+
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    history = model.fit(x_train,y_train,batch_size=100,epochs=20)
+    model.save(model_filename)
+
+#######################################################################
+#                            save history                             #
+#######################################################################
+    import pickle
+    with open(history_filename, 'wb') as f:
+        pickle.dump(history.history, f, protocol=pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
     main()
