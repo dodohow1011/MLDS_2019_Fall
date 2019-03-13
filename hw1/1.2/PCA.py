@@ -67,5 +67,8 @@ def PCA():
         sys.exit()
 
 weight = PCA()
-print (sys.argv[1].split('/')[0], sys.argv[2])
-print (weight.shape)
+filename = sys.argv[1].split('/')[0]+'_'+sys.argv[2]
+print (filename)
+
+import matplotlib.pyplot as plt
+plt.plot(weight[0, :], weight[1, :], 'r.')
