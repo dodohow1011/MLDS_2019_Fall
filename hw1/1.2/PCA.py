@@ -67,4 +67,5 @@ def PCA():
         sys.exit()
 
 weight = PCA()
+print (sys.argv[1].split('/')[0], sys.argv[2])
 print (weight.shape)
