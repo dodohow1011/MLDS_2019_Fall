@@ -6,13 +6,15 @@ import sys
 import os
 
 PI = math.pi
-WEIGHTS = {'layer_1':[], 'layer_2':[]}
+WEIGHTS = {'layer_1':[], 'layer_2':[], 'layer_3':[], 'layer_4':[]}
 
 
 def create_model(x_in):
     layer_1 = tf.layers.dense(x_in,    units=100, activation=tf.nn.relu, name='layer_1')
-    layer_2 = tf.layers.dense(layer_1, units=1, activation=None, name='layer_2')
-    return [layer_1, layer_2]
+    layer_2 = tf.layers.dense(layer_1, units=100, activation=tf.nn.relu, name='layer_2')
+    layer_3 = tf.layers.dense(layer_2, units=100, activation=tf.nn.relu, name='layer_3')
+    layer_4 = tf.layers.dense(layer_3, units=1, activation=None, name='layer_4')
+    return [layer_1, layer_2, layer_3, layer_4]
 
 def shuffle_data(train_x, train_y):
     print ('Shuffling data...', end='')
@@ -32,11 +34,13 @@ def data_generator(train_x, train_y, batch_size):
                 data_y.append(train_y[batch*batch_size+i])
             yield np.array(data_x), np.array(data_y)
 
-def record_weights(l1_w, l2_w):
+def record_weights(l1_w, l2_w, l3_w, l4_w):
     print ('recording weights')
     global WEIGHTS
     WEIGHTS['layer_1'].append(l1_w)
     WEIGHTS['layer_2'].append(l2_w)
+    WEIGHTS['layer_3'].append(l3_w)
+    WEIGHTS['layer_4'].append(l4_w)
 
 def cal_norms(gradients):
     grad_all = 0
@@ -76,8 +80,8 @@ def main():
     loss = tf.reduce_mean(tf.reduce_sum(tf.square(y_out - out), reduction_indices=[1]))
     sum_loss = tf.summary.scalar('training_loss', loss)
     
-    gradients = tf.train.AdamOptimizer(learning_rate=1e-3).compute_gradients(loss)
-    opt = tf.train.AdamOptimizer().apply_gradients(gradients)
+    gradients = tf.train.AdamOptimizer(learning_rate=1e-4).compute_gradients(loss)
+    opt = tf.train.AdamOptimizer(learning_rate=1e-4).apply_gradients(gradients)
 
     batch_size = 1
     steps_per_epoch = train_x.shape[0] // batch_size
@@ -97,6 +101,8 @@ def main():
 
         layer_1_weights = get_var('model/layer_1/kernel')
         layer_2_weights = get_var('model/layer_2/kernel')
+        layer_3_weights = get_var('model/layer_3/kernel')
+        layer_4_weights = get_var('model/layer_4/kernel')
         
         loss_list = []
         for step in range(steps_per_epoch*60):
@@ -106,9 +112,9 @@ def main():
 
             # retrieve weights every 3 epoch
             if step % (3*steps_per_epoch) == 0:
-                target = [opt, loss, gradients, layer_1_weights, layer_2_weights]
-                _, curLoss, grad, l1_w, l2_w = sess.run(target, feed_dict=feed_dict)
-                record_weights(l1_w, l2_w)
+                target = [opt, loss, gradients, layer_1_weights, layer_2_weights, layer_3_weights, layer_4_weights]
+                _, curLoss, grad, l1_w, l2_w, l3_w, l4_w = sess.run(target, feed_dict=feed_dict)
+                record_weights(l1_w, l2_w, l3_w, l4_w)
             else:
                 target = [opt, loss, gradients]
                 _, curLoss, grad = sess.run(target, feed_dict=feed_dict)
