@@ -5,8 +5,15 @@ import sys
 def PCA():
     if len(sys.argv) != 3:
         print ('usage: python3.5 PCA.py mnist_exp_#(1~8)/Weights_dict.pickle layer_#(1~4,all)')
+        print ('usage: python3.5 PCA.py mnist layer_#(1~4,all)')
         sys.exit()
-    with open(sys.argv[1], 'rb') as f:
+
+    files = [sys.argv[1]+'_exp_'+str(i)+'/Weights_dict.pickle' for i in range(1,9)]
+    weights = [get_weights(f) for f in files]
+    return weights
+
+def get_weights(filename):
+    with open(filename, 'rb') as f:
         origin_weights = pickle.load(f)
     weights_1 = np.array(origin_weights['layer_1'])
     weights_2 = np.array(origin_weights['layer_2'])
@@ -63,12 +70,21 @@ def PCA():
         reduced_weights = np.dot(tran_weights, u[:, :2]).transpose()
         return reduced_weights
     else:
-        print ('usage: python3.5 PCA.py mnist_exp_#(1~8)/Weights_dict.pickle layer_#(1~4,all)')
+        print ('usage: python3.5 PCA.py mnist layer_#(1~4,all)')
         sys.exit()
 
-weight = PCA()
-filename = sys.argv[1].split('/')[0]+'_'+sys.argv[2]
-print (filename)
+weights = PCA()
+filename = sys.argv[1]+'_'+sys.argv[2]
 
 import matplotlib.pyplot as plt
-plt.plot(weight[0, :], weight[1, :], 'r.')
+import matplotlib.cm as cm
+transparency = np.arange(4, weights[0].shape[1]+4, 1)
+transparency = transparency / (transparency[-1]+4)
+colors = []
+for i in range(len(weights)):
+    colors.append((np.random.rand(1)[0],np.random.rand(1)[0],np.random.rand(1)[0]))
+for weight, c in zip(weights, colors):
+    for i in range(weight.shape[1]):
+        plt.scatter(weight[0, i], weight[1, i], 15, c=(c[0], c[1], c[2], transparency[i]))
+plt.title(filename)
+plt.savefig('Opt_Vis/'+filename+'.png')
