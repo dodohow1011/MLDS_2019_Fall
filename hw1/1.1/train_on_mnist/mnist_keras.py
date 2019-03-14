@@ -35,17 +35,17 @@ def main():
     x_train, y_train, x_test, y_test = read()
 
     if sys.argv[1] == 'deep6':
-        from six_layer import Six_layers
+        from layers/six_layer import Six_layers
         model = Six_layers()
         history_filename = 'deep6_history.pickle'
         model_filename   = 'deep6_model.h5'
     elif sys.argv[1] == 'shallow' or sys.argv[1] == 'deep2':
-        from shallow_mnist import Shallow
+        from layers/shallow_mnist import Shallow
         model = Shallow()
         history_filename = 'deep2_history.pickle'
         model_filename   = 'deep2_model.h5'
-    elif sys.argv == 'deep4':
-        from four_layers import Four_layers
+    elif sys.argv[1] == 'deep4':
+        from layers/four_layers import Four_layers
         model = Four_layers()
         history_filename = 'deep4_history.pickle'
         model_filename   = 'deep4_model.h5'
