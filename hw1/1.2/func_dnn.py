@@ -10,9 +10,9 @@ WEIGHTS = {'layer_1':[], 'layer_2':[], 'layer_3':[], 'layer_4':[]}
 
 
 def create_model(x_in):
-    layer_1 = tf.layers.dense(x_in,    units=100, activation=tf.nn.relu, name='layer_1')
-    layer_2 = tf.layers.dense(layer_1, units=100, activation=tf.nn.relu, name='layer_2')
-    layer_3 = tf.layers.dense(layer_2, units=100, activation=tf.nn.relu, name='layer_3')
+    layer_1 = tf.layers.dense(x_in,    units=64, activation=tf.nn.relu, name='layer_1', kernel_initializer=tf.truncated_normal_initializer(stddev=0.5))
+    layer_2 = tf.layers.dense(layer_1, units=64, activation=tf.nn.relu, name='layer_2')
+    layer_3 = tf.layers.dense(layer_2, units=64, activation=tf.nn.relu, name='layer_3')
     layer_4 = tf.layers.dense(layer_3, units=1, activation=None, name='layer_4')
     return [layer_1, layer_2, layer_3, layer_4]
 
@@ -80,8 +80,8 @@ def main():
     loss = tf.reduce_mean(tf.reduce_sum(tf.square(y_out - out), reduction_indices=[1]))
     sum_loss = tf.summary.scalar('training_loss', loss)
     
-    gradients = tf.train.AdamOptimizer(learning_rate=1e-4).compute_gradients(loss)
-    opt = tf.train.AdamOptimizer(learning_rate=1e-4).apply_gradients(gradients)
+    gradients = tf.train.AdamOptimizer(learning_rate=1e-3).compute_gradients(loss)
+    opt = tf.train.AdamOptimizer(learning_rate=1e-3).apply_gradients(gradients)
 
     batch_size = 1
     steps_per_epoch = train_x.shape[0] // batch_size
