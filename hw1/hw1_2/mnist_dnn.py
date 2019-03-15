@@ -83,8 +83,8 @@ def main():
             )
     sum_loss = tf.summary.scalar('training_loss', loss)
     
-    gradients = tf.train.AdamOptimizer(learning_rate=1e-3).compute_gradients(loss)
-    opt = tf.train.AdamOptimizer().apply_gradients(gradients)
+    gradients = tf.train.AdamOptimizer(learning_rate=5e-3).compute_gradients(loss)
+    opt = tf.train.AdamOptimizer(5e-3).apply_gradients(gradients)
 
 #######################################################################
 #                            model summary                            #
@@ -93,7 +93,7 @@ def main():
     for layer in layers:
         print (layer)
 
-    batch_size = 64
+    batch_size = train_x.shape[0] // 10
     steps_per_epoch = train_x.shape[0] // batch_size
     gen = data_generator(train_x, train_y, batch_size)
 
@@ -101,9 +101,6 @@ def main():
 
         # preparation
         grad_norms = []
-        shit = [f for f in os.listdir('Tensorboard/')]
-        for s in shit: os.remove(os.path.join('Tensorboard', s))
-        writer = tf.summary.FileWriter('Tensorboard/', graph=sess.graph)
         all_vars = tf.global_variables()
         def get_var(name):
             for i in range(len(all_vars)):
@@ -118,7 +115,7 @@ def main():
         layer_4_weights = get_var('model/layer_4/kernel')
         
         loss_list = []
-        for step in range(steps_per_epoch*60):
+        for step in range(steps_per_epoch*100):
             curEpoch = 1+step//steps_per_epoch
             batch_x, batch_y = gen.__next__()
             feed_dict = {mnist_in: batch_x, mnist_out: batch_y}
@@ -134,8 +131,6 @@ def main():
             
             loss_list.append(curLoss)
 
-            writer.add_summary(s_l, step)
-            writer.add_summary(s_a, step)
             grad_norms.append(cal_norms(grad))
             pattern = 'Epoch {}, Step {}, Loss {:.6f}, Acc {:.6f}'
             print (pattern.format(curEpoch, step+1, curLoss, curAcc))

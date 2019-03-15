@@ -15,12 +15,19 @@ Use the same model mentioned above and store the gradient norms in the same two 
 
 ### Training
 
-To train the model, you only need to run run_func.sh and run_mnist.sh as well as specify the times of experiments.
+To train the model, you only need to run run_func.sh and run_mnist.sh as well as specify the experiment index.
 
 ```
 ./run_func.sh 1
-./run_func.sh 3
+./run_mnist.sh 3
 ```
+
+Or run run.sh to repeat the eight experiments.
+
+```
+./run.sh
+```
+
 Each trained parameters will be stored in directory ./hw1_2/func_exp_{} and ./hw1_2/mnist_exp_{}.
 
 ### Run PCA
