@@ -1,11 +1,8 @@
-# MLDS_2019_Fall
+# HW1-2 Optimization
 
 * **Visualize the optimization process.**
 * **Observe gradient norm during training.**
 * **What happens when gradient is almost zero?**
-
-
-
 
 ## What happens when gradient is almost zero? (Simulate function sinc(3x))
 
