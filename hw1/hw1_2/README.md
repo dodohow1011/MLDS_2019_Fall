@@ -39,6 +39,13 @@ python3 PCA.py mnist layer_1
 ```
 The result will be saved in directory ./hw1_2/Opt_Vis. 
 
+To visualize the result on gradient norms and loss, simply type the command
+
+```
+python3 plot.py mnist/func
+```
+The result will be saved in directory ./hw1_2/Plot.
+
 ## What happens when gradient is almost zero? (Simulate function sinc(3x))
 
 First, train the network with original loss function 50 epochs. Then we change the objective function to gradient norm and keep training in order to figure out the parameters. We train this simulation model for 100 times and find each loss and minimal ratio when gradient is alomst zero.
