@@ -35,7 +35,6 @@ def gradient_n(parameters):
         if p.grad is not None:
             grad = (p.grad.cpu().data.numpy() ** 2).sum()
         grad_all = grad + grad_all
-
     return grad_all ** 0.5
 
 def main():
@@ -51,7 +50,7 @@ def main():
     gradient_norm_all = []
     sample_num = 1000
 
-    for train_times in range(100):
+    for train_times in range(50):
         model = Net()
         optimizer = optim.Adam(model.parameters(), lr=0.05)
         optimizer_gradient_norm = optim.Adam(model.parameters(), lr=0.0005)
@@ -65,13 +64,10 @@ def main():
             loss.backward()
             optimizer.step()
             print('time: %03d, epoch: %03d, loss: %.6f' %(train_times, epoch, loss), end='\r')
-
-            #loss_all.append(loss.data.cpu().numpy())
-            #gradient_norm_all.append(gradient_n(model.parameters()))
         
         gradient_norm = np.zeros([1,1])
 
-        for epoch in range(100,1600):
+        for epoch in range(50,3000):
             prediction = model(train_x)
             
             gradient_norm[0][0] = gradient_n(model.parameters())
@@ -85,32 +81,11 @@ def main():
 
             print('time: %03d, epoch: %03d, loss: %.6f' %(train_times, epoch, gradient_norm[0][0]), end='\r')
 
-            #loss_all.append(loss.data.cpu().numpy())
-            #gradient_norm_all.append(gradient_norm[0][0])
-
             '''
             if epoch == 1499:
                 result = prediction.detach().numpy()
             '''
         torch.save(model.state_dict(), './models/gradient_norm_para_{}.pkl'.format(train_times))
-
-    '''
-    for epoch in range(100):
-        # minimal ratio
-        prediction = model(train_x)
-        minimal_count = 0
-        for sample_index in range(sample_num):
-            sample_weight(model.parameters())
-            prediction = model(train_x)
-            loss = loss_func(prediction, train_y)
-            if loss_all[-1] < loss.data.cpu().numpy():
-                minimal_count = minimal_count + 1
-
-        minimal_ratio = minimal_count / sample_num
-        minimal_ratio_all.append(minimal_ratio)
-        loss_mr_all.append(loss.data.cpu().numpy())
-    '''
-
 
     '''    
     plt.scatter(x, result)
@@ -118,14 +93,6 @@ def main():
     plt.xlabel('x')
     plt.ylabel('y')
     plt.savefig('test.png')
-    '''
-    
-    '''
-    plt.scatter(np.array(gradient_norm_all), np.array(loss_all))
-    plt.title('gradient_norm vs loss')
-    plt.xlabel('gradient_norm')
-    plt.ylabel('loss')
-    plt.savefig('gradient_norm_vs_loss.png')
     '''
 
 if __name__ == '__main__':
