@@ -23,7 +23,7 @@ To train the model, you only need use python3 to execute the simulate.py in ./hw
 python3 simulate.py
 ```
 
-The 100 times trained parameters will stored in directory ./hw1_2/models as gradient_norm_para_{}.pkl.
+Each trained parameters will be stored in directory ./hw1_2/models as gradient_norm_para_{}.pkl.
 
 ### Calculate Minimal Ratio and Visualization
 
