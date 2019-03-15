@@ -17,7 +17,7 @@ First, train the network with original loss function 50 epochs. Then we change t
 
 ### Training
 
-To train the moedl, you only need use python3 to execute the simulate.py in ./hw1_2/simulate_function directory.
+To train the model, you only need use python3 to execute the simulate.py in ./hw1_2/simulate_function directory.
 
 ```
 python3 simulate.py
