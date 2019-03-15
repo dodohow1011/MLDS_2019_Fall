@@ -37,6 +37,13 @@ Simply execute PCA.py and specify the model (mnist/func) as well as the layers y
 ```
 python3 PCA.py mnist layer_1
 ```
+
+To reproduce all the figure shown in the presentation, simply run PCA.sh.
+
+```
+./PCA.sh
+```
+
 The result will be saved in directory ./hw1_2/Opt_Vis. 
 
 ## What happens when gradient is almost zero? (Simulate function sinc(3x))
