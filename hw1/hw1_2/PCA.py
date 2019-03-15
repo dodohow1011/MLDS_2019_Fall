@@ -4,8 +4,7 @@ import sys
 
 def PCA():
     if len(sys.argv) != 3:
-        print ('usage: python3.5 PCA.py mnist_exp_#(1~8)/Weights_dict.pickle layer_#(1~4,all)')
-        print ('usage: python3.5 PCA.py mnist layer_#(1~4,all)')
+        print ('usage: python3.5 PCA.py mnist/func layer_#(1~4,all)')
         sys.exit()
 
     files = [sys.argv[1]+'_exp_'+str(i)+'/Weights_dict.pickle' for i in range(1,9)]
