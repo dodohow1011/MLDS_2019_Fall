@@ -7,8 +7,10 @@ import torch.optim as optim
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
+from collections import OrderedDict
 
 PI = math.pi
 device = torch.device("cpu")
@@ -65,6 +67,18 @@ def sample_weight(parameters):
             for i in range(sz[0]):
                 p[i].data *= 1 + 0.000001 * (np.random.rand() - 0.5)
 
+def generate_state_dict(vector, model):
+    return_orderdict = OrderedDict()
+    dummy_state_dict = model.state_dict()
+    cum_idx = 0
+    for key, value in dummy_state_dict.items():
+        sz = np.array(value.size())
+        length = np.prod(sz)
+        weight = vector[cum_idx:cum_idx + length].reshape(sz)
+        return_orderdict[key] = torch.FloatTensor(weight)
+        cum_idx = cum_idx + length
+    return return_orderdict
+
 def main():
     ##########################
     ## sin(3*pi*x)/(3*pi*x) ##
@@ -95,13 +109,49 @@ def main():
     
     loss_all = training_loss
     all_point = training_point
-    _x, _y = _tsne(np.array(all_point))
+    #_x, _y = _tsne(np.array(all_point))
+    pca = PCA(n_components=2)
+    pca = pca.fit(np.array(training_point))
+    low_dim = pca.transform(training_point)
+    _x, _y= low_dim[:, 0],  low_dim[:, 1]
+    x_min, x_max, y_min, y_max = np.amin(_x), np.amax(_x), np.amin(_y), np.amax(_y)
+    #print(x_min, x_max, y_min, y_max)
 
+    sample_num = 20
+    sample_x = np.linspace(x_min, x_max, num=sample_num)
+    sample_y = np.linspace(y_min, y_max, num=sample_num)
+    _sample_x = []
+    _sample_y = []
+
+    for i in range(sample_num):
+        for j in range(sample_num):
+            tmp_vector = np.append(sample_x[i],sample_y[j])
+            sample_point.append(pca.inverse_transform(tmp_vector))
+            _sample_x.append(sample_x[i])
+            _sample_y.append(sample_y[j])
+            #print(sample_point[-1])
+
+    for sample_index in range(len(sample_point)):
+        vector_state_dict = generate_state_dict(sample_point[i], model)
+        model.load_state_dict(vector_state_dict)
+
+        prediction = model(train_x)
+        loss = loss_func(prediction, train_y)
+        sample_loss.append(loss.data.cpu().numpy())
+
+    _v = np.append(_x[0],_y[0])
+    t_point = pca.inverse_transform(_v)
+    print(t_point)
+    print(training_point[0])
+
+
+    
     fig = plt.figure()
     ax = Axes3D(fig)
     ax.text(_x[0], _y[0], loss_all[0], 'START', color='black', fontsize=10)
-    ax.text(_x[9], _y[9], loss_all[9], 'END', color='black', fontsize=10)
-    ax.plot(_x[0:10], _y[0:10], loss_all[0:10], zdir='z', label='ys=0, zdir=z')
+    ax.text(_x[99], _y[99], loss_all[99], 'END', color='black', fontsize=10)
+    ax.plot(_x[0:100], _y[0:100], loss_all[0:100], zdir='z', label='ys=0, zdir=z')
+    ax.plot_trisurf(_sample_x, _sample_y, sample_loss, linewidth=0.2, antialiased=True, alpha=1.0, cmap='coolwarm')
     plt.savefig('training_point_3D.png')
     
 
