@@ -1,10 +1,16 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pickle
 import math
+import sys
+import os
 
 # with open('batchsize_comparison/result.pkl', 'rb') as f:
 #     result = pickle.load(f)
-with open('lr_comparison/result.pkl', 'rb') as f:
+# with open('lr_comparison/result.pkl', 'rb') as f:
+#     result = pickle.load(f)
+with open(sys.argv[1], 'rb') as f:
     result = pickle.load(f)
 
 alpha = []
@@ -39,4 +45,4 @@ ax2.tick_params(axis='y', labelcolor=color)
 fig.tight_layout()
 plt.title('Interpolation')
 plt.legend(['train', 'test'])
-plt.show()
+plt.savefig('{}.png'.format(os.path.join(sys.argv[1].split('/')[0], sys.argv[1].split('/')[0])))
