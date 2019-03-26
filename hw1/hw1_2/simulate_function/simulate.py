@@ -48,9 +48,8 @@ def main():
 
     loss_all = []
     gradient_norm_all = []
-    sample_num = 1000
 
-    for train_times in range(50):
+    for train_times in range(100):
         model = Net()
         optimizer = optim.Adam(model.parameters(), lr=0.05)
         optimizer_gradient_norm = optim.Adam(model.parameters(), lr=0.0005)
@@ -67,7 +66,7 @@ def main():
         
         gradient_norm = np.zeros([1,1])
 
-        for epoch in range(50,3000):
+        for epoch in range(100,3000):
             prediction = model(train_x)
             
             gradient_norm[0][0] = gradient_n(model.parameters())
