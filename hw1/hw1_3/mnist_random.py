@@ -5,18 +5,21 @@ from keras.layers import Dense, Conv2D, MaxPooling2D, Flatten
 from keras.models import Sequential
 import sys
 import pickle
-
+import os
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth=True
+
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
 
 
 def read():
     (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 	# number = 10000
-    # np.random.shuffle(y_train[:30000])
+    np.random.shuffle(y_train[:30000])
 
 	# x_train = x_train[0:number]
 	# y_train = y_train[0:number]
@@ -75,43 +78,53 @@ def main():
     accuracy = tf.reduce_mean(tf.cast(equality, tf.float32))
     
     loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.one_hot(indices=mnist_out, depth=10), logits=layers[-1]))
-    gradients = tf.train.AdamOptimizer(learning_rate=1e-3).compute_gradients(loss)
-    opt = tf.train.AdamOptimizer(1e-3).apply_gradients(gradients)
+    gradients = tf.train.AdamOptimizer(learning_rate=1e-5).compute_gradients(loss)
+    opt = tf.train.AdamOptimizer(1e-5).apply_gradients(gradients)
     
-    train_loss_list = []
-    test_loss_list = []
-    test_acc_list = []
     
+    train_loss = []
+    test_loss = []
+    train_acc = []
+    test_acc = []
     # batch_size
     batch_size = 100
     steps_per_epoch = train_x.shape[0] // batch_size
 
     gen_train = data_generator(train_x, train_y, batch_size)
     
-    with tf.Session(config=config) as sess:
+    gen_test = data_generator(test_x, test_y, batch_size)
+    
+    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
 
         sess.run(tf.global_variables_initializer())
-        for step in range(steps_per_epoch*20):
+        for step in range(steps_per_epoch*2000):
             curEpoch = step//steps_per_epoch+1
             x, y = gen_train.__next__()
             target = [opt, gradients, loss, accuracy]
 
             _, _, Loss, Acc = sess.run(target, feed_dict={mnist_in: x, mnist_out: y})
             # if (step+1) % steps_per_epoch == 0:
-            pattern = 'Epoch {}, Loss {:.6f}, Train_Acc {:.6f}, Val_acc '
-            print (pattern.format(curEpoch, Loss, Acc), end='')
+            pattern = 'Epoch {}, Steps {}, Loss {:.6f}, Train_Acc {:.6f} '
+            print (pattern.format(curEpoch, step+1, Loss, Acc))
             
-            train_loss_list.append(Loss)
         
             
-            print ('{:.6f}'.format(sess.run(accuracy, feed_dict={mnist_in: test_x[:batch_size], mnist_out: test_y[:batch_size]})))
+            if step == steps_per_epoch-1:
+                target = [loss, accuracy]
+                test_x, test_y = gen_test.__next__()
+                testLoss, testAcc = sess.run(target, feed_dict={mnist_in: test_x, mnist_out: test_y})
+                train_loss.append(Loss)
+                train_acc.append(Acc)
+                test_loss.append(testLoss)
+                test_acc.append(testAcc)
 
-
-    with open('train_loss.pickle', 'wb') as f:
-        pickle.dump(train_loss_list, f, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open('test_loss.pickle', 'wb') as f1:
-       #  pickle.dump(test_loss_list, f1, protocol=pickle.HIGHEST_PROTOCOL)
-    # with open('test_acc.pickle', 'wb') as f2:
-       #  pickle.dump(test_acc_list, f2, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('trainLoss.pickle', 'wb') as f:
+        pickle.dump(train_loss, f, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('trainAcc.pickle', 'wb') as f:
+        pickle.dump(train_acc, f, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('testLoss.pickle', 'wb') as f:
+        pickle.dump(test_loss, f, protocol=pickle.HIGHEST_PROTOCOL)
+    with open('testAcc.pickle', 'wb') as f:
+        pickle.dump(test_acc, f, protocol=pickle.HIGHEST_PROTOCOL)
 if __name__ == '__main__':
     main()

@@ -8,10 +8,12 @@ import pickle
 
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
+import os
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 config = tf.ConfigProto()
-config.gpu_options.allow_growth=True
-
+config.gpu_options.per_process_gpu_memory_fraction = 0.3
+set_session(tf.Session(config=config))
 
 def read():
     (x_train, y_train), (x_test, y_test) = mnist.load_data()
