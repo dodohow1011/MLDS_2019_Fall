@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 import sys
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[3])
 config = tf.ConfigProto()
 # config.gpu_options.per_process_gpu_memory_fraction = 0.33
 config.gpu_options.allow_growth = True
@@ -57,6 +56,7 @@ def main():
     if len(sys.argv) != 4:
         print ("usage: python3 mnist.py <batch_size> <learning rate> <gpu ID>")
         sys.exit()
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[3])
 
     # load data
     train_x, train_y = load_mnist()
@@ -93,7 +93,7 @@ def main():
 
         sess.run(tf.global_variables_initializer())
 
-        for step in range(steps_per_epoch*20):
+        for step in range(steps_per_epoch*40):
             curEpoch = 1+step//steps_per_epoch
             batch_x, batch_y = gen.__next__()
             feed_dict = {mnist_in: batch_x, mnist_out: batch_y}

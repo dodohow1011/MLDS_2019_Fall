@@ -3,7 +3,6 @@ import numpy as np
 import pickle
 import sys
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[3])
 config = tf.ConfigProto()
 # config.gpu_options.per_process_gpu_memory_fraction = 0.33
 config.gpu_options.allow_growth = True
@@ -151,6 +150,7 @@ def main():
     if len(sys.argv) != 5:
         print ("usage: python3 interpolate.py <model_1 directory> <model_2 directory> <gpu ID> <output filename>")
         sys.exit()
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(sys.argv[3])
     
     model_1 = sys.argv[1]
     model_2 = sys.argv[2]

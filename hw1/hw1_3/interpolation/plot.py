@@ -6,10 +6,10 @@ import math
 import sys
 import os
 
-# with open('batchsize_comparison/result.pkl', 'rb') as f:
-#     result = pickle.load(f)
-# with open('lr_comparison/result.pkl', 'rb') as f:
-#     result = pickle.load(f)
+if len(sys.argv) != 2:
+    print ('usage: python3 plot.py <pickle file name>')
+    sys.exit()
+
 with open(sys.argv[1], 'rb') as f:
     result = pickle.load(f)
 
