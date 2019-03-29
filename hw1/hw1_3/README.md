@@ -14,6 +14,33 @@
 
 ## Can network git random labels?
 
+Randomly change the labels for the training data and try to fit them by using different amount of parameters.
+
+Switch to the corresponding directory.
+
+```
+cd randomlabel
+```
+
+### Training
+
+To train models with different amout of paramters, run random\_mnist.py and specify the number of filters, device and patience which controls when to stop the training process.
+
+```
+python3 random_mnist.py 0 7 300
+```
+
+The result will be stored in model\_{filters} directory.
+The example above will train on mnist with random labels on GPU 0 with 300 filters on each convolution layers.
+The training process will stop if accuracy does not improve in 7 epochs.
+To visualize the comparison between losses and number of parameters, run plot\_result.py.
+
+```
+python3 plot_result.py <gpuID>
+```
+
+The figures will be saved as Model\_Loss.png and Model\_Acc.png in ./
+
 ## Number of parameters v.s. Generalization
 
 ## Flatness v.s. Generalization

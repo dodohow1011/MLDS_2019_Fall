@@ -50,7 +50,7 @@ def training(number):
     with tf.Session() as sess:
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         history = model.fit(x_train,y_train,batch_size=number,epochs=10)
-        grad = tf.gradients(model.output,model.input)
+        grad = tf.gradients(model.outputs,model.inputs)
         grad_norm = tf.norm(grad[0],ord='euclidean')
         grad_norm = sess.run(grad_norm,feed_dict={model.input: x_test})
         return grad_norm
