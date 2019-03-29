@@ -10,9 +10,9 @@ import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 config = tf.ConfigProto()
-config.gpu_options.per_process_gpu_memory_fraction = 0.3
+config.gpu_options.per_process_gpu_memory_fraction = 0.6
 set_session(tf.Session(config=config))
 
 def read():
@@ -46,10 +46,10 @@ model.add(Dense(units=10, activation='softmax'))
 model.summary()
 
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(x_train, y_train, batch_size=100, epochs=20)
+model.fit(x_train, y_train, batch_size=100, epochs=50)
 
 train = model.evaluate(x_train, y_train, batch_size=100)
 test = model.evaluate(x_test, y_test, batch_size=64)
 
-print ('Train Acc: ', train[1])
-print ('Test Acc: ', test[1])
+print ('Train Acc: ', train[0])
+print ('Test Acc: ', test[0])
