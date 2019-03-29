@@ -37,7 +37,7 @@ python3 mnist.py 64 1e-4 0
 
 The example above will train mnist with batch size 64, learing rate 0.0001 on the GPU whose ID is 0.
 
-The trained model will be saved in batchsize_{}_lr_{}/
+The trained model will be saved in batchsize\_{}\_lr\_{}/
 
 ### Interpolation and Plot
 
@@ -51,10 +51,10 @@ And then run interpolation.py, specifying the two models to interpolate and the 
 
 ```
 python3 interpolate.py <model_1> <model_2> <gpuID> <output directory>
-python3 interpolate.py batchsize_{}_lr_{} batchsize_{}_lr_{} 0 batchsize_comparison
+python3 interpolate.py batchsize\_{}\_lr\_{} batchsize\_{}\_lr\_{} 0 batchsize\_comparison
 ```
 
-A pickled file would be stored in batchsize_comparison/.
+A pickled file would be stored in batchsize\_comparison/.
 
 To plot the result, run plot.py and specify the file produced previously
 

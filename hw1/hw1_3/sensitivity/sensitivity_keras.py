@@ -49,7 +49,7 @@ def training(number):
     model = deep4()
     with tf.Session() as sess:
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        history = model.fit(x_train,y_train,batch_size=number,epochs=20)
+        history = model.fit(x_train,y_train,batch_size=number,epochs=10)
         grad = tf.gradients(model.output,model.input)
         grad_norm = tf.norm(grad[0],ord='euclidean')
         grad_norm = sess.run(grad_norm,feed_dict={model.input: x_test})
@@ -66,5 +66,6 @@ if __name__ == '__main__':
     grad_list.append(training(500))
     grad_list.append(training(1000))
     grad_list.append(training(2000))
+    grad_list.append(training(10000)
     print(grad_list)
     np.save("norm_model",grad_list)
