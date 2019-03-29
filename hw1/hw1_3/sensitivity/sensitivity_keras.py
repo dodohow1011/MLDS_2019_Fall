@@ -31,11 +31,11 @@ def read():
 
 def deep4():
     model = Sequential()
-    model.add(Conv2D(8, kernel_size=(3,3), activation='relu', input_shape=(28,28,1)))
-    model.add(Conv2D(8, kernel_size=(3,3), activation='relu'))
+    model.add(Conv2D(32, kernel_size=(3,3), activation='relu', input_shape=(28,28,1)))
+    model.add(Conv2D(32, kernel_size=(3,3), activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Conv2D(8, kernel_size=(3,3), activation='relu'))
-    model.add(Conv2D(8, kernel_size=(3,3), activation='relu'))
+    model.add(Conv2D(32, kernel_size=(3,3), activation='relu'))
+    model.add(Conv2D(32, kernel_size=(3,3), activation='relu'))
     model.add(MaxPooling2D(pool_size=(2,2)))
     model.add(Flatten())
     model.add(Dense(units=10, activation='softmax'))
@@ -48,43 +48,15 @@ def training(number):
     conv2d_1_input = tf.placeholder(tf.float32,shape=(None,28,28,1))
     model = deep4()
     with tf.Session() as sess:
-        os.environ["CUDA_VISIBLE_DEVICES"] = "1"
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
         history = model.fit(x_train,y_train,batch_size=number,epochs=20)
-#    y_train = tf.convert_to_tensor(y_train)
-#    model.outputs = tf.convert_to_tensor(model.outputs)
-#    loss = tf.keras.losses.categorical_crossentropy(y_train, model.outputs)
-#        x_test = tf.convert_to_tensor(x_test, dtype=tf.float32)
-        x_train = tf.convert_to_tensor(x_train)
-        y_train = tf.convert_to_tensor(y_train)
-#        y_output = model.apply(x_test)
-#        y_test = tf.convert_to_tensor(y_test)
-        os.environ["CUDA_VISIBLE_DEVICES"] = ""
-        y_output = model.apply(x_train)
-        y_output = tf.convert_to_tensor(y_output)
-        loss = tf.keras.losses.categorical_crossentropy(y_train, y_output)
-#        print(loss.shape)
-#        grad = tf.gradients(loss, x_test)
-        grad = tf.gradients(loss, x_train)
-        for i in grad:
-            grad_norm = tf.norm(i,2)
-        grad_norm=sess.run(grad_norm)
+        grad = tf.gradients(model.output,model.input)
+        grad_norm = tf.norm(grad[0],ord='euclidean')
+        grad_norm = sess.run(grad_norm,feed_dict={model.input: x_test})
         return grad_norm
-#    x_train = tf.convert_to_tensor(x_train)
-        
-#    with tf.Session() as sess:
-#        grad_list=sess.run(grad[0])
+
         
         
-
-
-#######################################################################
-#                            save history                             #
-#######################################################################
-#    import pickle
-#    with open(history_filename, 'wb') as f:
-#        pickle.dump(history.history, f, protocol=pickle.HIGHEST_PROTOCOL)
-
 if __name__ == '__main__':
     grad_list = []
     grad_list.append(training(10))
@@ -93,5 +65,6 @@ if __name__ == '__main__':
     grad_list.append(training(200))
     grad_list.append(training(500))
     grad_list.append(training(1000))
+    grad_list.append(training(2000))
     print(grad_list)
     np.save("norm_model",grad_list)
