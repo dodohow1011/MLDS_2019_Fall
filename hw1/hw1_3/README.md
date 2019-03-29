@@ -51,7 +51,7 @@ And then run interpolation.py, specifying the two models to interpolate and the 
 
 ```
 python3 interpolate.py <model_1> <model_2> <gpuID> <output directory>
-python3 interpolate.py batchsize\_{}\_lr\_{} batchsize\_{}\_lr\_{} 0 batchsize\_comparison
+python3 interpolate.py batchsize_{}_lr_{} batchsize_{}_lr_{} 0 batchsize_comparison
 ```
 
 A pickled file would be stored in batchsize\_comparison/.

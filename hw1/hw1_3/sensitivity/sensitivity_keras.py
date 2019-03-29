@@ -66,6 +66,6 @@ if __name__ == '__main__':
     grad_list.append(training(500))
     grad_list.append(training(1000))
     grad_list.append(training(2000))
-    grad_list.append(training(10000)
+    grad_list.append(training(10000))
     print(grad_list)
     np.save("norm_model",grad_list)
