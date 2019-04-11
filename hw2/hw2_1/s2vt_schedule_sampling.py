@@ -22,11 +22,11 @@ class Net(nn.Module):
         
         # model
         self.lstm1 = nn.LSTMCell(input_size=4096, hidden_size=self.dataset.EmbeddingDim())
-        nn.init.orthogonal(self.lstm1.weight_hh);
-        nn.init.orthogonal(self.lstm1.weight_ih);
+        # nn.init.orthogonal(self.lstm1.weight_hh);
+        # nn.init.orthogonal(self.lstm1.weight_ih);
         self.lstm2 = nn.LSTMCell(input_size=2*self.dataset.EmbeddingDim(), hidden_size=self.dataset.EmbeddingDim())
-        nn.init.orthogonal(self.lstm2.weight_hh);
-        nn.init.orthogonal(self.lstm2.weight_ih);
+        # nn.init.orthogonal(self.lstm2.weight_hh);
+        # nn.init.orthogonal(self.lstm2.weight_ih);
         
         self.one_hot = nn.Linear(self.dataset.EmbeddingDim(), total_words)
 
@@ -42,7 +42,7 @@ class Net(nn.Module):
         padding_lstm2 = Variable(torch.zeros(self.batch_size, self.dataset.EmbeddingDim())).cuda();
 
         total_loss=Variable(torch.FloatTensor([0])).cuda();
-        loss = nn.CrossEntropyLoss(reduce=False)
+        loss = nn.CrossEntropyLoss(reduce=None)
         # encoding
         for step in range(self.video_frame):
             h1, c1 = self.lstm1(feat[:,step,:], (h1, c1))
