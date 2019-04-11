@@ -19,11 +19,21 @@ Instead of training the embedding layer with the whole RNN network, we pretraine
 
 We used sentences in the training labels and testing labels to build this word2vec model.
 
-Usage: python3 create\_word\_model.py -f1 <training labels> -f2 <testing labels> -d <embedding dimension> -s <path to save model>
+Usage: python3 create\_word\_model.py -f1 [training labels] -f2 [testing labels] -d [embedding dimension] -s [path to save model]
 
 ```
 python3 create_word_model.py -f1 MLDS_hw2_1_data/training_label.json -f2 MLDS_hw2_1_data/testing_label.json -d 256 -s word_model/model.wv
 ```
+
+## s2vt
+
+## Attention
+
+## Schedule Sampling
+
+
+
+## Beam Search
 
 ### Training
 
