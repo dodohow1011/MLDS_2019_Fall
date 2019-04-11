@@ -38,7 +38,7 @@ We gradually increase the sampling rate from 0 to 0.9 along the training process
 Usage: python3 --mode train -s [directory to save the trianed model]
 
 ```
-python3 --mode train -s model\_checkpoint\_schedule\_sampling\_increase\_rate/
+python3 --mode train -s model_checkpoint_schedule_sampling_increase_rate/
 ```
 
 ### testing
@@ -46,7 +46,7 @@ python3 --mode train -s model\_checkpoint\_schedule\_sampling\_increase\_rate/
 Usage: python3 --mode inference --model [the trained model]
 
 ```
-python3 --mode inference --model model\_checkpoint\_schedule\_sampling\_increase\_rate/s2vt.pytorch
+python3 --mode inference --model model_checkpoint_schedule_sampling_increase_rate/s2vt.pytorch
 ```
 
 The result will be store in ./caption.txt
