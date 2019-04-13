@@ -55,7 +55,9 @@ The result will be store in ./caption.txt
 
 We apply beam search to s2vt_v2.py. Since beam search is only concerned with the output mothed, we don't need to retrain the model. 
 
-In this project, we use beam search with vocab_num as 3, group_num as 6. And the result sentence is the largest probability sentence above all candidates answers.
+In this project, we use beam search with vocab_num as 3, group_num as 6. 
+
+And the result is the sentence of the largest probability above all candidates answers.
 
 Usage: python3 s2vt_v2_BS.py --mode [mode] --checkpoint [model_name] --output [output_filename]
 
