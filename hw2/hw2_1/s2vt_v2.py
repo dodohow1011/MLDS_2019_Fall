@@ -6,12 +6,13 @@ from torch.autograd import Variable
 from torchvision import transforms
 from DataSet import DataSet
 import numpy as np
+from argparse import ArgumentParser
 import sys
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-batch_size = 8
+batch_size = 4
 epochs = 200
 
 data = DataSet(word2vec='word_model/model.wv', training_features='MLDS_hw2_1_data/training_data/id.txt', training_label='MLDS_hw2_1_data/training_label.json', testing_features='MLDS_hw2_1_data/testing_data/id.txt', testing_label='MLDS_hw2_1_data/testing_label.json', batch_size=batch_size)
@@ -76,13 +77,13 @@ class Net(nn.Module):
 
             # schedule sampling
             coin = np.random.randint(100)
-            if step > 0 and coin >= keep_rate:
+            if step > 0 and coin >= 100:
                 word_ids = np.argmax(one_hot_word.data.cpu().numpy(), axis=1)
                 word_vec = data.IDs2VECs(word_ids)
                 word_vec = Variable(torch.FloatTensor(word_vec)).cuda()
-                h2, c2 = self.lstm2(torch.cat((word_vec, h1), 1), (h2, c2))
+                h2, c2 = self.lstm_decode2(torch.cat((word_vec, h1), 1), (h2, c2))
             else:
-                h2, c2 = self.lstm2(torch.cat((caption[:,step,:], h1), 1), (h2, c2))
+                h2, c2 = self.lstm_decode2(torch.cat((caption[:,step,:], h1), 1), (h2, c2))
 
             one_hot_word = self.one_hot(h2)
             word_loss    = loss(one_hot_word, torch.max(caption_one_hot[:,step+1,:], 1)[1])
@@ -98,16 +99,16 @@ class Net(nn.Module):
 
     def inference(self, feat): 
         # initialize
-        h1 = Variable(torch.zeros(1, self.lstm1.hidden_size)).cuda()
-        h2 = Variable(torch.zeros(1, self.lstm2.hidden_size)).cuda()
-        c1 = Variable(torch.zeros(1, self.lstm1.hidden_size)).cuda()
-        c2 = Variable(torch.zeros(1, self.lstm2.hidden_size)).cuda()
+        h1 = Variable(torch.zeros(1, self.lstm1.hidden_size))
+        h2 = Variable(torch.zeros(1, self.lstm2.hidden_size))
+        c1 = Variable(torch.zeros(1, self.lstm1.hidden_size))
+        c2 = Variable(torch.zeros(1, self.lstm2.hidden_size))
         
         sentence = []
 
         # <pad>
-        padding_lstm1 = Variable(torch.zeros(1, 4096)).cuda();
-        padding_lstm2 = Variable(torch.zeros(1, hidden_size)).cuda();
+        padding_lstm1 = Variable(torch.zeros(1, 4096))
+        padding_lstm2 = Variable(torch.zeros(1, hidden_size))
 
         # encoding
         h2_list = []
@@ -117,7 +118,7 @@ class Net(nn.Module):
             h2_list.append(h2.tolist())
 
         # attention
-        h2_list = Variable(torch.FloatTensor(h2_list)).cuda()
+        h2_list = Variable(torch.FloatTensor(h2_list))
         h2_list = h2_list.transpose(0, 1)
         
         # decoding
@@ -126,7 +127,7 @@ class Net(nn.Module):
         for step in range(self.decoder_length-1):          
             previous_word = Variable(torch.FloatTensor(previous_word))
             previous_word = previous_word.reshape((1, word2vec_size))
-            previous_word = previous_word.cuda()
+            previous_word = previous_word
             h1, c1 = self.lstm_decode1(padding_lstm1, (h1, c1))
             h2, c2 = self.lstm_decode2(torch.cat((previous_word, h1), 1), (h2, c2))
             
@@ -170,24 +171,25 @@ def train():
 
             loss_list.append(loss.item())
 
-            print ('===> epoch: {}, steps: {}, loss: {:.4f}, sampling rate: {:.4f}'.format(epoch+1, batch, loss.item(), 1/epochs*epoch))
+            print ('===> epoch: {}, steps: {}, loss: {:.4f}, sampling rate: {:.4f}'.format(epoch+1, batch, loss.item(), 0))
         if epoch%10 == 0:
-           torch.save(model.state_dict(), './model_checkpoint/s2vt_attn_sample.pytorch-{}'.format(epoch))
+           torch.save(model.state_dict(), './model_checkpoint_embed_32/s2vt_att.pytorch-{}'.format(epoch))
 
-    torch.save(model.state_dict(), './model_checkpoint/s2vt_attn_sample.pytorch')
+    torch.save(model.state_dict(), './model_checkpoint_embed_32/s2vt_att.pytorch')
 
-def test(checkpoint):
+def test(checkpoint, out):
 
     total_words = data.VocabSize()
     decoder_length = data.MaxSeqLength()
     
     model = Net(batch_size=batch_size, total_words=total_words, decoder_length=decoder_length)
-    model.cuda()
+    model
 
     model.load_state_dict(state_dict=torch.load(checkpoint))
     test_data, test_id = data.test_batch()
+    # test_data, _, _ = data.next_batch()
     i = 0
-    output_txt = open("./caption.txt", "w")
+    output_txt = open(out, "w")
     
     for test_feat in test_data:
 
@@ -195,7 +197,7 @@ def test(checkpoint):
         if (test_feat.shape[0] != 80):
             continue
         test_feat = test_feat.reshape((1, 80, -1))
-        test_feat = test_feat.cuda()
+        test_feat = test_feat
         output = model.inference(test_feat)
         sentence = ' '.join(output)
         sentence = sentence.replace('<BOS>', '')
@@ -206,21 +208,23 @@ def test(checkpoint):
         i += 1
         print (sentence)
 
-def main():
-    if len(sys.argv) >= 2:
-        if sys.argv[1] == 'train':
-            train()
-        elif sys.argv[1] == 'test':
-            if len(sys.argv) == 2:
-                test("./model_checkpoint/s2vt_attn.pytorch")
-            else:
-                checkpoint = sys.argv[2]
-                test(checkpoint)
-        else:
-            print ("usage: type 'python3 s2vt.py train' to train the model and 'python3 s2vt.py test' to test the model")
+def main(args):
+    if args.mode == 'train':
+        train()
     else:
-        print ("usage: type 'python3 s2vt.py train' to train the model and 'python3 s2vt.py test' to test the model")
+        checkpoint = args.checkpoint
+        output = args.output
+        test(checkpoint, output)
+
+
+
+def parse():
+    parser = ArgumentParser()
+    parser.add_argument('--mode', default='train', help='train or test')
+    parser.add_argument('--checkpoint', help='model to be tested')
+    parser.add_argument('--output', help='output file')
+    return parser.parse_args()
 
 if __name__ == '__main__':
-    main()
+    main(parse())
 
