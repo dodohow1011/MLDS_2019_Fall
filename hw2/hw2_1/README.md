@@ -62,7 +62,5 @@ And the result is the sentence of the largest probability above all candidates a
 Usage: python3 s2vt_v2_BS.py --mode [mode] --checkpoint [model_name] --output [output_filename]
 
 ```
-python3 s2vt_v2_BS.py --mode inference --checkpoint ./model_checkpoint_embed_32/s2vt_att.pytorch --output output.txt
+python3 s2vt_v2_BS.py --mode inference --checkpoint ./model_checkpoint_embed_32/s2vt_att.pytorch --output
 ```
-
-The result will be store in ./output.txt
