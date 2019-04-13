@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 #batch_size = [10, 20, 30, 60, 80, 100, 200, 300, 600, 800, 1000, 2000, 3000, 6000, 8000, 10000, 20000, 30000, 60000]
 batch_size = [10, 20, 30, 60, 80, 100, 200, 300, 600, 800, 1000]
-sample_times = 100
+sample_times = 1000
 epsilon = 1e-4
 
 root = './data'
@@ -107,7 +107,7 @@ def main():
 	fig, ax1 = plt.subplots()
 	color = 'tab:blue'
 	ax1.set_xlabel('batch_size (log scale)')
-	ax1.set_ylabel('loss', color=color)
+	ax1.set_ylabel('acc', color=color)
 	ax1.set_xscale("log", nonposx='clip')
 	ax1.plot(batch_size, train_acc, 'b')
 	ax1.plot(batch_size, test_acc, 'b--')
