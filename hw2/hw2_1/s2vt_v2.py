@@ -118,7 +118,7 @@ class Net(nn.Module):
             h2_list.append(h2.tolist())
 
         # attention
-        h2_list = Variable(torch.FloatTensor(h2_list))
+        h2_list = Variable(torch.FloatTensor(h2_list)).cuda()
         h2_list = h2_list.transpose(0, 1)
         
         # decoding
@@ -197,7 +197,7 @@ def test(checkpoint, out):
         if (test_feat.shape[0] != 80):
             continue
         test_feat = test_feat.reshape((1, 80, -1))
-        test_feat = test_feat
+        test_feat = test_feat.cuda()
         output = model.inference(test_feat)
         sentence = ' '.join(output)
         sentence = sentence.replace('<BOS>', '')
