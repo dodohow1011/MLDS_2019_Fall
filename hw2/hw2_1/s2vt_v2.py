@@ -99,16 +99,16 @@ class Net(nn.Module):
 
     def inference(self, feat): 
         # initialize
-        h1 = Variable(torch.zeros(1, self.lstm1.hidden_size))
-        h2 = Variable(torch.zeros(1, self.lstm2.hidden_size))
-        c1 = Variable(torch.zeros(1, self.lstm1.hidden_size))
-        c2 = Variable(torch.zeros(1, self.lstm2.hidden_size))
+        h1 = Variable(torch.zeros(1, self.lstm1.hidden_size)).cuda()
+        h2 = Variable(torch.zeros(1, self.lstm2.hidden_size)).cuda()
+        c1 = Variable(torch.zeros(1, self.lstm1.hidden_size)).cuda()
+        c2 = Variable(torch.zeros(1, self.lstm2.hidden_size)).cuda()
         
         sentence = []
 
         # <pad>
-        padding_lstm1 = Variable(torch.zeros(1, 4096))
-        padding_lstm2 = Variable(torch.zeros(1, hidden_size))
+        padding_lstm1 = Variable(torch.zeros(1, 4096)).cuda()
+        padding_lstm2 = Variable(torch.zeros(1, hidden_size)).cuda()
 
         # encoding
         h2_list = []
@@ -127,7 +127,7 @@ class Net(nn.Module):
         for step in range(self.decoder_length-1):          
             previous_word = Variable(torch.FloatTensor(previous_word))
             previous_word = previous_word.reshape((1, word2vec_size))
-            previous_word = previous_word
+            previous_word = previous_word.cuda()
             h1, c1 = self.lstm_decode1(padding_lstm1, (h1, c1))
             h2, c2 = self.lstm_decode2(torch.cat((previous_word, h1), 1), (h2, c2))
             
@@ -173,9 +173,9 @@ def train():
 
             print ('===> epoch: {}, steps: {}, loss: {:.4f}, sampling rate: {:.4f}'.format(epoch+1, batch, loss.item(), 0))
         if epoch%10 == 0:
-           torch.save(model.state_dict(), './model_checkpoint_embed_32/s2vt_att.pytorch-{}'.format(epoch))
+           torch.save(model.state_dict(), './model/s2vt_att.pytorch-{}'.format(epoch))
 
-    torch.save(model.state_dict(), './model_checkpoint_embed_32/s2vt_att.pytorch')
+    torch.save(model.state_dict(), './model/s2vt_att.pytorch')
 
 def test(checkpoint, out):
 
@@ -183,7 +183,7 @@ def test(checkpoint, out):
     decoder_length = data.MaxSeqLength()
     
     model = Net(batch_size=batch_size, total_words=total_words, decoder_length=decoder_length)
-    model
+    model.cuda()
 
     model.load_state_dict(state_dict=torch.load(checkpoint))
     test_data, test_id = data.test_batch()

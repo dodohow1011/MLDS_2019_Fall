@@ -7,14 +7,15 @@ from DataSet import DataSet
 import numpy as np
 import sys
 import os
+from argparse import ArgumentParser
 
 batch_size = 4
 epochs = 100
-hidden_size = 256
 
 data = DataSet(word2vec='word_model/model.wv', training_features='MLDS_hw2_1_data/training_data/id.txt', training_label='MLDS_hw2_1_data/training_label.json', testing_features='MLDS_hw2_1_data/testing_data/id.txt', testing_label='MLDS_hw2_1_data/testing_label.json', batch_size=batch_size)
 
 word2vec_size = data.EmbeddingDim()
+hidden_size = word2vec_size
 class Net(nn.Module):
     def __init__(self, batch_size, total_words, decoder_length):
         super(Net, self).__init__()
@@ -129,11 +130,11 @@ def train():
 
             print ('===> epoch: {}, steps: {}, loss: {:.4f}'.format(epoch+1, batch, loss.item()))
         if epoch%10 == 0:
-           torch.save(model.state_dict(), './model_checkpoint/s2vt.pytorch-{}'.format(epoch))
+           torch.save(model.state_dict(), './model/s2vt.pytorch-{}'.format(epoch))
 
-    torch.save(model.state_dict(), './model_checkpoint/s2vt.pytorch')
+    torch.save(model.state_dict(), './model/s2vt.pytorch')
 
-def test(checkpoint):
+def test(checkpoint, out):
 
     total_words = data.VocabSize()
     decoder_length = data.MaxSeqLength()
@@ -144,7 +145,7 @@ def test(checkpoint):
     model.load_state_dict(state_dict=torch.load(checkpoint))
     test_data, test_id = data.test_batch()
     i = 0
-    output_txt = open("./caption.txt", "w")
+    output_txt = open(out, "w")
     
     for test_feat in test_data:
 
@@ -163,22 +164,24 @@ def test(checkpoint):
         i += 1
         print (sentence)
 
-def main():
-    if len(sys.argv) >= 2:
-        if sys.argv[1] == 'train':
-            train()
-        elif sys.argv[1] == 'test':
-            if len(sys.argv) == 2:
-                test("./model_checkpoint/s2vt.pytorch")
-            else:
-                checkpoint = sys.argv[2]
-                test(checkpoint)
-        else:
-            print ("usage: type 'python3 s2vt.py train' to train the model and 'python3 s2vt.py test' to test the model")
+def main(args):
+    if args.mode == 'train':
+        train()
     else:
-        print ("usage: type 'python3 s2vt.py train' to train the model and 'python3 s2vt.py test' to test the model")
+        checkpoint = args.checkpoint
+        output = args.output
+        test(checkpoint, output)
+
+
+
+def parse():
+    parser = ArgumentParser()
+    parser.add_argument('--mode', default='train', help='train or test')
+    parser.add_argument('--checkpoint', help='model to be tested')
+    parser.add_argument('--output', help='output file')
+    return parser.parse_args()
 
 if __name__ == '__main__':
-    # os.makedirs("model_checkpoint", exist_ok=True)
-    main()
+    main(parse())
+
 
