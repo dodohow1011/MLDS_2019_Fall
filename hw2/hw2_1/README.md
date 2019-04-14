@@ -25,10 +25,6 @@ Usage: python3 create\_word\_model.py -f1 [training labels] -f2 [testing labels]
 python3 create_word_model.py -f1 MLDS_hw2_1_data/training_label.json -f2 MLDS_hw2_1_data/testing_label.json -d 256 -s word_model/model.wv
 ```
 
-## s2vt
-
-## Attention
-
 ## Schedule Sampling
 
 We gradually increase the sampling rate from 0 to 0.9 along the training process.
@@ -47,6 +43,28 @@ Usage: python3 --mode inference --model [the trained model]
 
 ```
 python3 --mode inference --model model_checkpoint_schedule_sampling_increase_rate/s2vt.pytorch
+```
+
+The result will be store in ./caption.txt
+
+## S2VT & S2VT_v2 (with attention and schedule sampling)
+
+### training
+
+Usage: python3 s2vt.py/s2vt_v2.py --mode=train
+
+```
+python3 s2vt_v2.py --mode=train
+```
+
+The model will be stored in directory model/
+
+### testing
+
+Usage: python3 s2vt.py/s2vt_v2.py --mode=test --checkpoint=[checkpoint path] --output=[output file name]
+
+```
+python3 s2vt_v2.py --mode=test --checkpoint=model/s2vt_attn.pytorch --output=caption.txt
 ```
 
 The result will be store in ./caption.txt
