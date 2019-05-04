@@ -9,30 +9,48 @@ import sys
 
 
 class DataSet:
-    def __init__(self, word2vec, training_text, training_label ,batch_size=32):
+    def __init__(self, word2vec, training_text, training_label ,batch_size, testing=None):
         self.word2vec           = KeyedVectors.load(word2vec, mmap='r')
         self.embedding_dim      = self.word2vec['<bos>'].shape[0]
-        self.vocab_size         = len(self.word2vec.vocab)
+        self.vocab_size         = len(self.word2vec.vocab) + 1 # <pad>
         self.training_in_txt    = []
         self.training_out_txt   = []
+        self.training_out_id    = []
+        self.testing            = []
         self.batch_size         = batch_size
         self.max_length         = None
         self.batch_index        = 0
+        self.test_index         = 0
         self.training_num       = None
         self.max_batch_index    = None
+        self.max_test_index     = None
         self.sentence_limit     = 20 # default max length of a sentence
 
-        with open (training_text, 'r') as f:
-            for line in f:
-                self.training_in_txt.append(line.strip())
+        if testing is not None:
+            with open(testing, 'r') as f:
+                for line in f:
+                    if line[:5] != '<bos>':
+                        data = '<bos> '+line.strip()+' <eos>'
+                    else:
+                        data = line.strip()
+                    data = data.split()
+                    if len(data) > self.sentence_limit: data = data[-self.sentence_limit:]
+                    while len(data) < self.sentence_limit: data.append('<pad>')
+                    self.testing.append(data)
 
-        with open(training_label, 'r') as f:
-            for line in f:
-                self.training_out_txt.append(line.strip())
+        if training_text is not None:
+            with open (training_text, 'r') as f:
+                for line in f:
+                    self.training_in_txt.append(line.strip())
+
+        if training_label is not None:
+            with open(training_label, 'r') as f:
+                for line in f:
+                    self.training_out_txt.append(line.strip())
 
         #create mappings
-        self.word2id = {'<pad>':0, '<bos>':1, '<eos>':2}
-        self.id2word = {0:'<pad>', 1:'<bos>', 2:'<eos>'}
+        self.word2id = { '<pad>':0, '<bos>':1, '<eos>':2 }
+        self.id2word = { 0:'<pad>', 1:'<bos>', 2:'<eos>' }
         curID = 3
         for word in self.word2vec.vocab:
             if word not in self.word2id:
@@ -40,6 +58,9 @@ class DataSet:
                 self.id2word[curID] = word
                 curID +=1
         
+        self.max_test_index = len(self.testing) // self.batch_size - 1
+        if testing is not None: return
+
         '''
         filter out data with unknown words and those that exceeds length limit
         '''
@@ -52,10 +73,12 @@ class DataSet:
         print ('vocab size    -> {}'.format(self.vocab_size))
         print ('max length    -> {}'.format(self.sentence_limit))
         print ('training data -> {}'.format(self.training_num))
+        print ('batch size    -> {}'.format(self.batch_size))
         print ('batch num     -> {}'.format(self.max_batch_index+1))
 
     def filter(self):
-        print ('filtering data...', end='')
+        print ('filtering data...')
+        start = time.time()
         temp_in    = []
         temp_out   = []
         max_length = 0
@@ -90,8 +113,22 @@ class DataSet:
         self.training_in_txt  = temp_in
         self.training_out_txt = temp_out
         self.sentence_limit   = min(self.sentence_limit, max_length)
+        print ('took {}s'.format(time.time()-start))
 
-        print ('done')
+        # pad the sequence here
+        start = time.time()
+        print ('padding sequences and creating id sequences...')
+        for i in range(len(self.training_in_txt)):
+            while len(self.training_in_txt[i]) < self.sentence_limit:
+                self.training_in_txt[i].append('<pad>')
+            while len(self.training_out_txt[i]) < self.sentence_limit:
+                self.training_out_txt[i].append('<pad>')
+            tmp = []
+            for word in self.training_out_txt[i]:
+                tmp.append(self.Word2ID(word))
+            self.training_out_id.append(np.array(tmp))
+        self.training_out_id = np.array(self.training_out_id)
+        print ('took {}s'.format(time.time()-start))
 
     def data2vec(self, sentences):
         sentences_vec = []
@@ -100,18 +137,21 @@ class DataSet:
             for word in sent:
                 word_vec = self.Word2Vec(word)
                 text_vec.append(word_vec)
-            sentences_vec.append(text_vec)
-        return sentences_vec
+            sentences_vec.append(np.array(text_vec))
+        return np.array(sentences_vec)
 
     def Word2ID(self, word):
         return self.word2id[word]
 
-    def ID2Word(self, id):
-        return self.id2word[id]
+    def ID2Word(self, ID):
+        return self.id2word[ID]
 
     def Word2Vec(self, word):
         if word == '<pad>': return np.zeros(self.embedding_dim)
-        return self.word2vec[word]
+        try:
+            return self.word2vec[word]
+        except KeyError:
+            return np.zeros(self.embedding_dim)
 
     def VocabSize(self):
         return self.vocab_size
@@ -125,9 +165,11 @@ class DataSet:
     def next_batch(self):
         if self.batch_index == 0:
             print ('shuffling data...')
-            c = list(zip(self.training_in_txt, self.training_out_txt))
+            start = time.time()
+            c = list(zip(self.training_in_txt, self.training_out_txt, self.training_out_id))
             shuffle(c)
-            self.training_in_txt, self.training_out_txt = zip(*c)
+            self.training_in_txt, self.training_out_txt, self.training_out_id = zip(*c)
+            print ('took {}s'.format(time.time()-start))
 
         '''
         shape:
@@ -138,21 +180,32 @@ class DataSet:
         index = self.batch_index*self.batch_size
         sents = self.training_in_txt[self.batch_index*self.batch_size:(self.batch_index+1)*self.batch_size]
         sents = self.data2vec(sents)
-        sents = self.padSeqVec(sents)
-
+        sent_ids = self.training_out_id[self.batch_index*self.batch_size:(self.batch_index+1)*self.batch_size]
         responses = self.training_out_txt[self.batch_index*self.batch_size:(self.batch_index+1)*self.batch_size]  
-        onehot    = self.toOnehot(responses)
-        onehot    = self.padOneHot(onehot)
         responses = self.data2vec(responses)
-        responses = self.padSeqVec(responses)
 
         self.batch_index += 1
         if self.batch_index > self.max_batch_index: self.batch_index = 0
+        return sents, responses, sent_ids
 
-        return sents, responses, onehot
+    def test_batch(self):
+        '''
+        shape:
+            sents     : (batch size, max seq length, latent dimension)
+        '''
+        index = self.test_index*self.batch_size
+        sents = self.testing[self.test_index*self.batch_size:(self.test_index+1)*self.batch_size]
+        sents = self.data2vec(sents)
+        # sents = self.padSeqVec(sents)
+
+        self.test_index += 1
+        if self.test_index > self.max_test_index: return None
+        return sents
 
     def padSeqVec(self, labels):
+        print ('test', self.sentence_limit)
         for i in range(len(labels)):
+            if len(labels[i]) > self.sentence_limit: labels[i] = labels[i][-self.sentence_limit:]
             while len(labels[i]) < self.sentence_limit:
                 labels[i].append(self.Word2Vec('<pad>'))
             labels[i] = np.array(labels[i])
@@ -171,12 +224,12 @@ class DataSet:
         OnehotLabels = []
         for sentence in texts:
             OnehotSentence = []
-            for word in sentence:
+            for ID in sentence:
                 OnehotWord = np.zeros(self.vocab_size)
-                OnehotWord[self.Word2ID(word)] = 1
+                OnehotWord[ID] = 1
                 OnehotSentence.append(OnehotWord)
-            OnehotLabels.append(OnehotSentence)
-        return OnehotLabels
+            OnehotLabels.append(np.array(OnehotSentence))
+        return np.array(OnehotLabels)
 
     def IDs2VECs(self, ids):
         vecs = []
@@ -189,15 +242,19 @@ def main(args):
     training_response = args.label
     word2vec          = args.model
     
-    dataset = DataSet(word2vec, training_text, training_response)
+    dataset = DataSet(word2vec, training_text, training_response, 32)
 
-    sent, response, onehot = dataset.next_batch()
-    sent, response, onehot = dataset.next_batch()
-    sent, response, onehot = dataset.next_batch()
-
+    exp = 20
+    start = time.time()
+    for i in range(exp):
+        s = time.time()
+        sent, response, onehot = dataset.next_batch()
+        print ('{}s elapsed'.format(time.time()-s))
+    end = time.time()
     print (sent.shape)
     print (response.shape)
     print (onehot.shape)
+    print ('ave time for computing batch: {}'.format((end-start)/exp))
 
 def parse():
     parser = ArgumentParser()
