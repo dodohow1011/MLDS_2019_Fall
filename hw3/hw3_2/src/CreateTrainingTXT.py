@@ -4,7 +4,7 @@ import os
 # this file finds the images used for hw3_2
 # i.e. some images with irrelevant labels will be excluded
 '''
-python3 CreateTraingTXT.py --anime ../AnimeDataset/tags_clean.csv --extra ../extra_data/tags.csv --content ../TestingTextContent.txt --out ../training.txt
+python3 CreateTrainingTXT.py --anime ../AnimeDataset/tags_clean.csv --extra ../extra_data/tags.csv --content ../TestingTextContent.txt --out ../training.txt
 '''
 
 def main(args):
@@ -27,7 +27,7 @@ def main(args):
 
     with open(anime, 'r') as f:
         for line in f:
-            image_path = os.path.join(anime_dir, 'faces', line.strip().split(',')[0])
+            image_path = os.path.join(anime_dir, 'faces64', line.strip().split(',')[0])
             atts = (line.strip().split(',')[-1]).split('\t')
             a_h = None
             a_e = None

@@ -16,7 +16,8 @@ class Encoder(nn.Module):
         self.gru = nn.GRU(input_size=word_emb_size, hidden_size=hidden_size, num_layers=n_layers, dropout=dropout)
 
     def forward(self, input_seq):
-        # initialize
+        # input_shape: seq_size * batch_size * dim
+        # initialize h
         h = Variable(torch.zeros(self.n_layers, self.batch_size, self.hidden_size)).cuda()
         output, h = self.gru(input_seq, h)
         return output, h
