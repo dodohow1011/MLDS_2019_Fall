@@ -28,3 +28,11 @@ or
 bash run.sh
 ```
 
+Our best pretrained model is in directory dcgan_model/v2. If you want to use it to view the result, simply type:
+
+```
+python3 main.py --mode test --checkpoint dcgan_model/v2/model_dcgan.pt -g [directory to store your image]
+```
+
+The same command can be used to test any model. Only need to specify the model you want to test after the argument --checkpoint and provide it with a path to store your image.
+
