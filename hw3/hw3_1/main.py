@@ -64,7 +64,7 @@ def train(epochs, batch_size, num_step, train_img_list, save_dir, generated_img_
     G_optimizer = optim.Adam(generator.parameters(), lr=0.0002, betas=(0.5, 0.999))
     
     # labels
-    real_label = Variable(torch.full((batch_size,), 1)).cuda().squeeze()
+    real_label = Variable(torch.rand((batch_size,))).cuda().squeeze()*0.1 + 0.9
     fake_label = Variable(torch.full((batch_size,), 0)).cuda().squeeze()
     
     # generate batch
@@ -140,6 +140,7 @@ def main(args):
     save_dir = args.model
     generated_img_file = args.generated
     loss_file = args.loss_file
+    checkpoint = args.checkpoint
 
     train_img_list = []
     

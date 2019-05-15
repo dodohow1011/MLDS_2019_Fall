@@ -27,7 +27,7 @@ def main(args):
 
     with open(anime, 'r') as f:
         for line in f:
-            image_path = os.path.join(anime_dir, 'faces64', line.strip().split(',')[0])
+            image_path = os.path.join(anime_dir, 'faces64', line.strip().split(',')[0]+'.jpg')
             atts = (line.strip().split(',')[-1]).split('\t')
             a_h = None
             a_e = None
@@ -55,7 +55,7 @@ def main(args):
 
     with open(extra, 'r') as f:
         for line in f:
-            image_path = os.path.join(extra_dir, 'images', line.strip().split(',')[0])
+            image_path = os.path.join(extra_dir, 'images', line.strip().split(',')[0]+'.jpg')
             atts = line.strip().split(',')[-1]
             atts = [atts.split()[:2], atts.split()[2:]]
             atts = [' '.join(atts[0]), ' '.join(atts[1])]
