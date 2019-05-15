@@ -143,23 +143,35 @@ def main(args):
     checkpoint = args.checkpoint
 
     train_img_list = []
-    
-    with open(train_image_file, 'r') as f:
-        for line in f:
-            line = line.strip()
-            train_img_list.append(line)
-    
-    num_step = len(train_img_list) // batch_size
 
-    print ("Number of training datas: " + str(len(train_img_list)))
     if mode == 'train':
+        with open(train_image_file, 'r') as f:
+            for line in f:
+                line = line.strip()
+                train_img_list.append(line)
+    
+        num_step = len(train_img_list) // batch_size
+
+    if mode == 'test':
+        generator = Generator(input_channel_num, output_channel_num, g_drop)
+        generator.load_state_dict(state_dict=torch.load(checkpoint)['Generator'])
+        generator.cuda()
+        
+        if generated_img_file is not None:
+            noise = Variable(torch.randn(generated_img_num, input_channel_num, 1, 1)).cuda()
+            gen_img = generator(noise)
+            generate_images(gen_img, 0, generated_img_file)
+
+
+    elif mode == 'train':
+        print ("Number of training datas: " + str(len(train_img_list)))
         train(epochs, batch_size, num_step, train_img_list, save_dir, generated_img_file, loss_file)
 
 def parse():
     parser = ArgumentParser()
     parser.add_argument('--mode', required=True, help='train or test')
     parser.add_argument('--epoch', '-e', required=None, type=int, help='epochs')
-    parser.add_argument('--batch_size', '-b', required=True, type=int, help='batch size')
+    parser.add_argument('--batch_size', '-b', required=None, type=int, help='batch size')
     parser.add_argument('--train', '-t', default=None, help='the file that contains sentences')
     parser.add_argument('--checkpoint', default=None, help='model to be tested')
     parser.add_argument('--test', default=None, help='testing data')
