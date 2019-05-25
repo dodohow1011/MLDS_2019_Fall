@@ -4,7 +4,7 @@ import os
 # this file finds the images used for hw3_2
 # i.e. some images with irrelevant labels will be excluded
 '''
-python3 CreateTrainingTXT.py --anime ../AnimeDataset/tags_clean.csv --extra ../extra_data/tags.csv --content ../TestingTextContent.txt --out ../training.txt
+python3 CreateTrainingTXT.py --anime ../AnimeDataset/tags_clean.csv --extra ../extra_data/tags.csv --content ../TestingTextContent.txt --out training.txt
 '''
 
 def main(args):
@@ -13,6 +13,8 @@ def main(args):
     out     = args.out
     content = args.content
 
+    traininganime = open('trainingAnime.txt', 'w')
+    trainingextra = open('trainingExtra.txt', 'w')
     traningtxt = open(out, 'w')
     anime_dir  = '/'.join(anime.split('/')[:-1])
     extra_dir  = '/'.join(extra.split('/')[:-1])
@@ -51,6 +53,7 @@ def main(args):
                 if hair_check and eyes_check: break
             if a_h is not None and a_e is not None:
                 traningtxt.write('{},{}\n'.format(image_path, ','.join([a_h, a_e])))
+                traininganime.write('{},{}\n'.format(image_path, ','.join([a_h, a_e])))
                 print (image_path)
 
     with open(extra, 'r') as f:
@@ -81,9 +84,12 @@ def main(args):
                 if hair_check and eyes_check: break
             if a_h is not None and a_e is not None:
                 traningtxt.write('{},{}\n'.format(image_path, ','.join([a_h, a_e])))
+                trainingextra.write('{},{}\n'.format(image_path, ','.join([a_h, a_e])))
                 print (image_path)
 
     traningtxt.close()
+    traininganime.close()
+    trainingextra.close()
 
 def parse():
     parser = ArgumentParser()
