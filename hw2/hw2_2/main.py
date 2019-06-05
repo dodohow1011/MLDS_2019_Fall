@@ -9,14 +9,14 @@ from argparse import ArgumentParser
 import sys
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 def train(batch_size, data, epochs, save_dir):
     batch_size = batch_size
     seq_size = data.MaxSeqLength()
     hidden_size = data.EmbeddingDim()
-    n_layers=2
-    dropout=0.5
+    n_layers = 2
+    dropout = 0
 
     encoder = Encoder(batch_size=batch_size, seq_size=seq_size, word_emb_size=hidden_size, hidden_size=hidden_size, n_layers=n_layers, dropout=dropout)
     encoder.cuda()
@@ -34,7 +34,6 @@ def train(batch_size, data, epochs, save_dir):
     for epoch in range(epochs):
         for batch in range(batch_per_epoch):
             sents, response, sent_ids = data.next_batch()
-            
             sents, response, sent_ids = Variable(torch.FloatTensor(sents)), Variable(torch.FloatTensor(response)), Variable(torch.LongTensor(sent_ids))
             sents = sents.view(20, 64, -1)
             response = response.view(20, 64, -1)
@@ -49,11 +48,14 @@ def train(batch_size, data, epochs, save_dir):
             loss = nn.CrossEntropyLoss(reduce=None)
             loss_list = []
             for word in range(seq_size-1):
+                # teacher forcing
                 decoder_input = response[word, :, :].view(1, batch_size, -1)
+
                 decoder_output, decoder_h = decoder(decoder_input, decoder_h)
                 decoder_output = decoder_output.view(batch_size, -1)
+
+                # calculate loss
                 word_loss = loss(decoder.one_hot(decoder_output), sent_ids[:,word+1])
-            
                 total_loss += torch.sum(word_loss) / batch_size
             
             encoder_optimizer.zero_grad()
@@ -78,7 +80,7 @@ def train(batch_size, data, epochs, save_dir):
 
     if save_dir is not None:
         print ("Saving checkpoint")
-        torch.save({'encoder': encoder.state_dict(), 'decoder': decoder.state_dict()}, os.path.join(save_dir, 'model_layer.pytorch'))
+        torch.save({'encoder': encoder.state_dict(), 'decoder': decoder.state_dict()}, os.path.join(save_dir, 'model_2layer.pytorch'))
         with open(os.path.join(save_dir, 'loss_2layer.history', 'w')) as f:
             pickle.dump(loss_list, f, protocol=pickle.HIGHEST_PROTOCOL)
 
