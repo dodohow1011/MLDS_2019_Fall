@@ -1,6 +1,12 @@
 from agent_dir.agent import Agent
 import scipy.misc
 import numpy as np
+import torch
+import torch.nn.Functional as F
+from torch import nn
+from torch.autograd import Variable
+from torchvision import transforms
+# from torchsummary import summary
 
 def prepro(o,image_size=[80,80]):
     """
@@ -32,6 +38,15 @@ def RGB2Gray(image):
             gray[row][col] = 0.2126*r + 0.7125*g + 0.0722*b
     return gray
 
+class AgentModel(nn.Module):
+    def __init__(self):
+        super(AgentModel, self).__init__()
+
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, state):
+        x = F.relu(self.conv1(state))
+        return x
 
 class Agent_PG(Agent):
     def __init__(self, env, args):
@@ -49,7 +64,8 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-
+        self.env = env
+        self.model = AgentModel()
 
     def init_game_setting(self):
         """
