@@ -76,6 +76,8 @@ class Agent_PG(Agent):
         ##################
         self.env = env
         self.policy = AgentModel()
+        self.rewards = []
+        self.loss = []
 
     def init_game_setting(self):
         """
@@ -97,7 +99,8 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-
+        print (self.env.action_space(1))
+        sys.exit()
         optimizer = optim.RMSprop(self.policy.parameters(), lr=1e-4, weight_decay=0.99)
         total_reward = 0
         for episode in range(episodes):
@@ -106,9 +109,13 @@ class Agent_PG(Agent):
                 state = RGB2Gray(state)
                 state = state.reshape(1, state.shape[0], -1)
                 action = self.make_action(state)
+
+                action = action + 1
                 
                 state, reward, done, _ = self.env.step(action)
                 total_reward = total_reward + reward
+
+                self.rewards.append(reward)
 
                 if done:
                     print ("Episode{} done! Reward: {:3f}".format(episode+1, total_reward))
@@ -139,6 +146,7 @@ class Agent_PG(Agent):
         probs = self.policy(state)
         m = Categorical(probs)
         action = m.sample()
+        self.loss.append(m.log_prob(action))
 
         return action.item()
 
