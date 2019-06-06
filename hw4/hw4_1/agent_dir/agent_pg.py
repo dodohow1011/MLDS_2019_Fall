@@ -52,6 +52,10 @@ class AgentModel(nn.Module):
         self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
         self.linear = nn.Linear(256*23*20, 3)
 
+        self.policy_history = []
+        self.reward_episode = []
+        self.discount = 0.99
+
     def forward(self, state):
         x = F.relu(self.conv1(state))
         x = self.pool(x)
@@ -84,7 +88,9 @@ class Agent_PG(Agent):
 
         self.env = env
         self.policy = AgentModel().cuda()
-        self.data = []
+
+        self.loss_history = []
+        self.reward_history = []
 
         # summary(self.policy, (1, 186, 160))
         # sys.exit()
@@ -109,49 +115,68 @@ class Agent_PG(Agent):
 
 
     def train(self):
+        print ('Start training!')
         """
         Implement your training algorithm here
         """
         ##################
         # YOUR CODE HERE #
         ##################
-        optimizer = optim.RMSprop(self.policy.parameters(), lr=1e-4, weight_decay=0.99)
         for episode in range(episodes):
-            self.play()
+            self.play(episode)
             self.update()
 
             if  (episode+1) % 50 == 0:
                 print ("Save checkpoint")
-                torch.save(self.policy.state_dict(), os.path.join(checkpoints, "_{}.pt".format(episode+1)))
+                torch.save(self.policy.state_dict(), os.path.join(checkpoint, "_{}.pt".format(episode+1)))
 
-    def play(self):
+    def play(self, episode):
         # clear memory
-        self.data = []
         state = self.env.reset()
-        total_reward = 0
+        state = RGB2Gray(state)
+        self.total_reward = 0
+        self.pre_state = None
         while(True):
-            state = RGB2Gray(state)
             action = self.make_action(state)
-
             action = action + 1 # action space {1, 2, 3}
-               
-            next_state, reward, done, _ = self.env.step(action)
-            total_reward = total_reward + reward
 
-            self.data.append((state, action, reward)) # save for update
-            print ('action', action)
-
-            state = next_state
+            state, reward, done, _ = self.env.step(action)
+            self.policy.reward_episode.append(reward)
+            self.total_reward = self.total_reward + reward
+            state = RGB2Gray(state)
 
             if done:
-                print ("Episode {} done! Reward: {:3f}".format(episode+1, total_reward))
-                print (len(self.data))
-                sys.exit()
+                print ("Episode {} done! Reward: {:3f}".format(episode+1, self.total_reward))
                 break
 
     def update(self):
-        pass
+        optimizer = optim.RMSprop(self.policy.parameters(), lr=1e-2, weight_decay=0.99)
 
+        R = 0
+        rewards = []
+        reward_episode = np.array(self.policy.reward_episode)
+        reward_episode = reward_episode[::-1]
+        for i in range(len(reward_episode)):
+            for j in range(len(reward_episode)-i):
+                R = reward_episode[j] + self.policy.discount * R
+            rewards.append(R)
+            R = 0
+        rewards = rewards[1:]
+
+        rewards = torch.FloatTensor(rewards)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
+        loss = (torch.sum(torch.mul(Variable(torch.FloatTensor(self.policy.policy_history), requires_grad=True).cuda(), Variable(rewards, requires_grad=True).cuda()).mul(-1), -1))
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        self.policy.policy_history = []
+        self.policy.reward_episode = []
+
+        self.loss_history.append(loss.item())
+        self.reward_history.append(self.total_reward)
+    
     def make_action(self, observation, test=True):
         """
         Return predicted action of your agent
@@ -172,11 +197,20 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        state = observation.unsqueeze(0) # size = (1, 1, 187, 160)
-        state = state.cuda()
-        probs = self.policy(state)
+        if self.pre_state is None:
+            self.pre_state = observation
+            return 0
+
+        residual_state = observation - self.pre_state
+        residual_state = observation.unsqueeze(0) # size = (1, 1, 187, 160)
+        residual_state = residual_state.cuda()
+        probs = self.policy(residual_state)
         m = Categorical(probs)
         action = m.sample()
-        # self.loss.append(m.log_prob(action)) # save for update
+        self.pre_state = observation
+
+        # save logprob
+        self.policy.policy_history.append(m.log_prob(action).data.cpu())
+
         return action.item()
 

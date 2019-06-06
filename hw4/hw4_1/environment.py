@@ -18,6 +18,8 @@ class Environment(object):
 
         self.action_space = self.env.action_space
         self.observation_space = self.env.observation_space
+
+        self.env = gym.wrappers.Monitor(self.env, './render', force=True)
         
     def seed(self, seed):
         '''
