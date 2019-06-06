@@ -99,31 +99,30 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        print (self.env.action_space(1))
-        sys.exit()
         optimizer = optim.RMSprop(self.policy.parameters(), lr=1e-4, weight_decay=0.99)
         total_reward = 0
         for episode in range(episodes):
             state = self.env.reset()
-            for step in range(10000):
+            while(True):
                 state = RGB2Gray(state)
-                state = state.reshape(1, state.shape[0], -1)
+                state = state.reshape(1, state.shape[0], -1) # size = (1, 187, 160)
                 action = self.make_action(state)
 
-                action = action + 1
+                action = action + 1 # action space {1, 2, 3}
                 
                 state, reward, done, _ = self.env.step(action)
                 total_reward = total_reward + reward
 
-                self.rewards.append(reward)
+                self.rewards.append(reward) # save for update
 
                 if done:
                     print ("Episode{} done! Reward: {:3f}".format(episode+1, total_reward))
                     total_reward = 0
                     break
 
-            print ("Save checkpoint")
-            torch.save(self.policy.state_dict(), os.path.join(checkpoints, "_{}.pt".format(episode+1)))
+            if  (episode+1) % 50 == 0:
+                print ("Save checkpoint")
+                torch.save(self.policy.state_dict(), os.path.join(checkpoints, "_{}.pt".format(episode+1)))
 
 
 
@@ -142,11 +141,11 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        state = torch.from_numpy(observation).float().unsqueeze(0)
+        state = torch.from_numpy(observation).float().unsqueeze(0) # size = (1, 1, 187, 160)
         probs = self.policy(state)
         m = Categorical(probs)
         action = m.sample()
-        self.loss.append(m.log_prob(action))
+        self.loss.append(m.log_prob(action)) # save for update
 
         return action.item()
 
