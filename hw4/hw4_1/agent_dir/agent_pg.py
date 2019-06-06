@@ -6,7 +6,10 @@ import torch.nn.Functional as F
 from torch import nn
 from torch.autograd import Variable
 from torchvision import transforms
+from torch.distributions import Categorical
 # from torchsummary import summary
+
+episodes = 1000
 
 def prepro(o,image_size=[80,80]):
     """
@@ -65,7 +68,7 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
         self.env = env
-        self.model = AgentModel()
+        self.policy = AgentModel()
 
     def init_game_setting(self):
         """
@@ -87,7 +90,16 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        pass
+        total_reward = 0
+        for episode in range(episodes):
+            state = env.reset()
+            for step in range(10000):
+                state = prepo(state)
+                action = make_action(state)
+                
+                state, reward = self.env.step(action)
+                total_reward = total_reward + reward
+
 
 
     def make_action(self, observation, test=True):
@@ -105,5 +117,9 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+        probs = policy(observation)
+        m = Categorical(probs)
+        action = m.sample()
+
         return self.env.get_random_action()
 
