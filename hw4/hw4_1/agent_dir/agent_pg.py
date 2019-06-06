@@ -2,14 +2,17 @@ from agent_dir.agent import Agent
 import scipy.misc
 import numpy as np
 import torch
-import torch.nn.Functional as F
+import torch.nn.functional as F
 from torch import nn
 from torch.autograd import Variable
-from torchvision import transforms
+# from torchvision import transforms
+import torch.optim as optim
 from torch.distributions import Categorical
+import sys
 # from torchsummary import summary
 
 episodes = 1000
+checkpoint = "checkpoints"
 
 def prepro(o,image_size=[80,80]):
     """
@@ -25,7 +28,7 @@ def prepro(o,image_size=[80,80]):
     
     """
     y = o.astype(np.uint8)
-    resized = scipy.misc.imresize(y, image_size)
+    resized = y.thumbnail()
     return np.expand_dims(resized.astype(np.float32),axis=2)
 
 def RGB2Gray(image):
@@ -46,9 +49,13 @@ class AgentModel(nn.Module):
         super(AgentModel, self).__init__()
 
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1)
+        self.linear = nn.Linear(32*187*160, 3)
 
     def forward(self, state):
         x = F.relu(self.conv1(state))
+        x = x.reshape(1, -1)
+        x = self.linear(x)
+        x = F.softmax(x, dim=1)
         return x
 
 class Agent_PG(Agent):
@@ -90,15 +97,26 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
+
+        optimizer = optim.RMSprop(self.policy.parameters(), lr=1e-4, weight_decay=0.99)
         total_reward = 0
         for episode in range(episodes):
-            state = env.reset()
+            state = self.env.reset()
             for step in range(10000):
-                state = prepo(state)
-                action = make_action(state)
+                state = RGB2Gray(state)
+                state = state.reshape(1, state.shape[0], -1)
+                action = self.make_action(state)
                 
-                state, reward = self.env.step(action)
+                state, reward, done, _ = self.env.step(action)
                 total_reward = total_reward + reward
+
+                if done:
+                    print ("Episode{} done! Reward: {:3f}".format(episode+1, total_reward))
+                    total_reward = 0
+                    break
+
+            print ("Save checkpoint")
+            torch.save(self.policy.state_dict(), os.path.join(checkpoints, "_{}.pt".format(episode+1)))
 
 
 
@@ -117,9 +135,10 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        probs = policy(observation)
+        state = torch.from_numpy(observation).float().unsqueeze(0)
+        probs = self.policy(state)
         m = Categorical(probs)
         action = m.sample()
 
-        return self.env.get_random_action()
+        return action.item()
 
