@@ -13,9 +13,10 @@ from torchsummary import summary
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-episodes = 1000
+episodes = 6000
 checkpoint = "checkpoints"
 trans = transforms.Compose([transforms.ToPILImage(),
+                            transforms.Resize([80, 80]),
                             transforms.Grayscale(num_output_channels=1),
                             transforms.ToTensor()])
 
@@ -38,7 +39,7 @@ def prepro(o,image_size=[80,80]):
 
 def RGB2Gray(image, trans=trans):
     # remove score board
-    image = image[24:,:,:]
+    image = image[34:,:,:]
     image = trans(image)
     return image
 
@@ -46,36 +47,18 @@ class AgentModel(nn.Module):
     def __init__(self):
         super(AgentModel, self).__init__()
 
-        self.pool  = nn.MaxPool2d(2, stride=2)
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1)
-        self.linear = nn.Linear(256*23*20, 3)
+        self.linear1 = nn.Linear(80*80, 256)
+        self.linear2 = nn.Linear(256, 3)
 
         self.policy_history = []
         self.reward_episode = []
         self.discount = 0.99
 
     def forward(self, state):
-        x = F.relu(self.conv1(state))
-        x = self.pool(x)
-
-        x = F.relu(self.conv2(x))
-        x = self.pool(x)
-
-        x = F.relu(self.conv3(x))
-        x = self.pool(x)
-
-        x = x.view(x.size(0), -1)
-        x = self.linear(x)
+        x = F.relu(self.linear1(state))
+        x = self.linear2(x)
         x = F.softmax(x, dim=1)
         return x
-
-    def initWeight(self, mean=0.0, std=0.02):
-        for m in self._modules:
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                m.weight.data.normal_(mean, std)
-                m.bias.data.zero_()
 
 class Agent_PG(Agent):
     def __init__(self, env, args):
@@ -87,19 +70,19 @@ class Agent_PG(Agent):
         super(Agent_PG,self).__init__(env)
 
         self.env = env
+        self.env.seed(101011387)
         self.policy = AgentModel().cuda()
 
         self.loss_history = []
         self.reward_history = []
 
-        # summary(self.policy, (1, 186, 160))
-        # sys.exit()
+        summary(self.policy, (1, 80*80))
 
         if args.test_pg:
             #you can load your model here
             print('loading trained model')
-        else:
-            self.policy.initWeight()
+
+        self.optimizer = optim.RMSprop(self.policy.parameters(), lr=5e-3)
 
     def init_game_setting(self):
         """
@@ -123,53 +106,58 @@ class Agent_PG(Agent):
         # YOUR CODE HERE #
         ##################
         for episode in range(episodes):
-            self.play(episode)
-            self.update()
+            self.play(episode)# ; sys.exit()
+            if (episode+1) % 10 == 0: self.update()
 
             if  (episode+1) % 50 == 0:
                 print ("Save checkpoint")
                 torch.save(self.policy.state_dict(), os.path.join(checkpoint, "_{}.pt".format(episode+1)))
 
+        loss = np.array(self.loss_history)
+        reward = np.array(self.reward_history)
+        np.save('loss.npy', loss)
+        np.save('reward.npy', reward)
+
     def play(self, episode):
-        # clear memory
         state = self.env.reset()
-        state = RGB2Gray(state)
         self.total_reward = 0
-        self.pre_state = None
+        self.pre_state = 0
         while(True):
-            action = self.make_action(state)
-            action = action + 1 # action space {1, 2, 3}
+            state = RGB2Gray(state)
+            action = self.make_action(state, test=False)
 
             state, reward, done, _ = self.env.step(action)
             self.policy.reward_episode.append(reward)
             self.total_reward = self.total_reward + reward
-            state = RGB2Gray(state)
 
             if done:
-                print ("Episode {} done! Reward: {:3f}".format(episode+1, self.total_reward))
+                print ("Episode {} done! Reward: {:3f}".format(episode+1, self.total_reward), " ")
                 break
 
     def update(self):
-        optimizer = optim.RMSprop(self.policy.parameters(), lr=1e-2, weight_decay=0.99)
 
         R = 0
         rewards = []
+        loss = 0
         reward_episode = np.array(self.policy.reward_episode)
         reward_episode = reward_episode[::-1]
-        for i in range(len(reward_episode)):
-            for j in range(len(reward_episode)-i):
-                R = reward_episode[j] + self.policy.discount * R
-            rewards.append(R)
-            R = 0
-        rewards = rewards[1:]
 
-        rewards = torch.FloatTensor(rewards)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
-        loss = (torch.sum(torch.mul(Variable(torch.FloatTensor(self.policy.policy_history), requires_grad=True).cuda(), Variable(rewards, requires_grad=True).cuda()).mul(-1), -1))
+        for i in reward_episode:
+            R = i + self.policy.discount * R
+            rewards.insert(0, R)
 
-        optimizer.zero_grad()
+        rewards = torch.FloatTensor(rewards).cuda()
+        rewards = (rewards - rewards.mean(-1)) / (rewards.std(-1))
+        
+        logp = torch.stack(self.policy.policy_history)
+        loss = - torch.sum(torch.mul(logp, rewards), -1) / 10
+
+        # print (loss.requires_grad)
+        self.optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+        self.optimizer.step()
+
+        print ("loss: {:4f}".format(loss.item()))
 
         self.policy.policy_history = []
         self.policy.reward_episode = []
@@ -197,20 +185,21 @@ class Agent_PG(Agent):
         ##################
         # YOUR CODE HERE #
         ##################
-        if self.pre_state is None:
-            self.pre_state = observation
-            return 0
-
         residual_state = observation - self.pre_state
-        residual_state = observation.unsqueeze(0) # size = (1, 1, 187, 160)
+        # residual_state = observation.unsqueeze(0) # size = (1, 1, 187, 160)
         residual_state = residual_state.cuda()
-        probs = self.policy(residual_state)
+        # observation = observation.view(1, 80*80).cuda()
+        probs = self.policy(residual_state.view(1, 80*80))[0]
         m = Categorical(probs)
         action = m.sample()
         self.pre_state = observation
 
-        # save logprob
-        self.policy.policy_history.append(m.log_prob(action).data.cpu())
+        act = [0, 2, 3]
 
-        return action.item()
+        # print (probs)
+
+        # save logprob
+        self.policy.policy_history.append(m.log_prob(action))
+
+        return act[action.item()]
 
